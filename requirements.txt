@@ -1,0 +1,5 @@
+opencv-python
+vidgear
+simplejpeg
+playsound
+pylsl

@@ -1,0 +1,5 @@
+labc serve TriggerAndButtons &
+sleep 5
+python3 -m "import labc; labc.network.trigger_and_buttons.start()"
+export DISPLAY=:0
+labc serve StreamViewer

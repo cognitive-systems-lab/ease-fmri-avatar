@@ -1,0 +1,9 @@
+recorder:
+
+  - format : csv
+    filename : '{type}.{name}.{utc}' 
+    path : '~/data/lsl-recordings/{experiment}/{session}/run{run}'    
+
+  - type : Audio
+    format : flac
+    filename : '{type}.{name}.{utc}'

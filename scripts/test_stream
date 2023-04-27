@@ -1,0 +1,114 @@
+#! /usr/bin/python3
+#
+from labc import network
+import logging
+import time
+from pathlib import Path
+
+log = logging.Logger(__name__)
+
+
+# VIDEO CONFIGURATION
+video_client_ip = "10.101.2.53" # scanner computer (llp1)
+# video_client_ip = "192.168.178.86" # moritz computer (seraphim)
+
+camera_id = 4
+
+video_config = {
+    "width": 1280,
+    "height": 720,
+    "framerate": 30.0,
+    "codec": "MJPG",
+}
+
+input("Press enter to init services.")
+
+# tell video to stream to Computer in Skyra-Lab
+network.camera_streamer.set_config(
+    target_addr=video_client_ip,
+    camera_id=camera_id,
+    **video_config,
+)
+
+network.stream_viewer.set_config(**video_config)
+
+clap_idx = 0
+print("Possible Actions: start / stop | stream / record")
+while True:
+    cmd = input("Enter next action:")
+
+    if cmd in ("q", "quit"):
+        break
+    
+    try:
+        first, second = cmd.split()
+    except:
+        print("Invalid command!")
+        continue 
+
+    if first == "start":
+
+        if second in ("s", "str", "stream", "streaming"):
+            log.info("Start video stream.")
+            network.camera_streamer.start()
+            network.stream_viewer.start()
+        
+        elif second in ("r", "rec", "record", "recording"):
+
+            # determine recording path
+            session_no = input("Enter session number:")
+            data_path = Path("~/data/lsl-recordings/").expanduser()
+            experiment = "ease-fmri-avatar-lablinking"
+            session = 'session.' + session_no
+
+            # find run number
+            run_folders = list((data_path / session).iterdir())
+            run_no = 0
+            while f"run{run_no}" in run_folders:
+                run_no+=1
+            run = f"run{run_no}"
+
+            recording_path = data_path / experiment / session / run
+            print("Record to recording_path")
+
+
+            network.lsl_recorder.set_params(
+                path = str(recording_path), # this is only used for offset location
+                experiment = experiment,
+                session = session,
+                run = run,
+            )
+
+            log.info("Start recording!")
+            network.camera_streamer.start_recording()
+            time.sleep(3)
+            network.lsl_recorder.start()
+        
+        else:
+            print("Invalid second argument:", second)
+
+    elif first == "stop":
+
+        if second in ("s", "str", "stream", "streaming"):
+            log.info("Stopvideo stream.")
+            
+            network.stream_viewer.stop()
+            time.sleep(.1)
+            network.camera_streamer.stop()
+        
+        elif second in ("r", "rec", "record", "recording"):
+            log.info("Stop recording!")
+            network.lsl_recorder.stop()
+            time.sleep(3)
+            network.camera_streamer.stop()
+
+        elif second in ("clap"):
+            network.camera_streamer.clap(clap_idx)
+            clap_idx += 1
+        
+        else:
+            print("Invalid second argument:", second)
+    
+    else:
+        print("Invalid first argument:", first)
+

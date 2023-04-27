@@ -1,0 +1,42 @@
+#! /bin/bash
+
+SESSION="efall-llpc2"
+
+openSession () {
+    echo "Create new ease-fmri-avatar-lablink session"
+    
+    # create windows 
+    tmux new-session -d -s $SESSION
+    tmux split-window -h -t $SESSION:0.0
+    tmux split-window -v -t $SESSION:0.1
+    tmux split-window -v -t $SESSION:0.0
+    
+    # enter venvs
+    tmux send-keys -t $SESSION:0.0 "conda activate ease-lablink && clear" Enter
+    tmux send-keys -t $SESSION:0.1 "conda activate ease-lablink && clear" Enter
+    tmux send-keys -t $SESSION:0.2 "conda activate ease-lablink && clear" Enter
+    tmux send-keys -t $SESSION:0.3 "conda activate ease-lablink && clear" Enter
+    
+    # start services
+    tmux send-keys -t $SESSION:0.2 "labc serve LslRecorder" Enter
+    tmux send-keys -t $SESSION:0.3 "labc serve SoundService" Enter
+    tmux send-keys -t $SESSION:0.0 "labc serve CameraStreamer" Enter
+    tmux send-keys -t $SESSION:0.1 "./test_stream" Enter
+}
+
+if [ -z "$1" ]; then
+    CMD="open" 
+else
+    CMD=$1
+fi
+
+if [ "$CMD" = "kill" ]; then
+    echo "killing session" $SESSION
+    tmux kill-session -t $SESSION
+else
+    tmux has-session -t $SESSION 2>/dev/null
+    if [ $? != 0 ]; then
+        openSession
+    fi
+    tmux attach-session -t $SESSION
+fi
